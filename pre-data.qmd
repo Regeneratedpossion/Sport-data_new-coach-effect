@@ -13,6 +13,8 @@ format:
       \makeatletter
       \patchcmd{\beamer@@frametitle}{\insertframenumber}{\ifnum\value{framenumber}>1 \insertframenumber\fi}{}{}
       \makeatother
+      \usepackage{caption}
+      \captionsetup[table]{skip=4pt}  # 默认是10pt，你可以调小为 4pt
 output-file: new-coach-effect.pdf
 ---
 ## Research Question
@@ -23,16 +25,42 @@ output-file: new-coach-effect.pdf
 
 ## Data Preparation
 
+```{r}
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+df <- readRDS("df_prepared.rds")
+
+
+df_example <- df %>%
+  filter(Team == "Dortmund", coach_change == 1 | lead(coach_change, 1) == 1) %>%
+  select(
+    Team,
+    Date,
+    coach,
+    coach_change,
+    change_index,
+    change_period,
+    Points,
+    heterogeneity_std
+  ) %>%
+  head(5)
+
+# 美化列名
+names(df_example) <- c("Team", "Date", "Coach", "Change", "Change ID", "Phase", "Points", "Heterogeneity")
+# 输出适应页面宽度的表格
+kable(df_example, format = "latex", booktabs = TRUE, caption = "Example rows around coaching change") %>%
+  kable_styling(latex_options = c("scale_down", "hold_position"))
+```
+
 - Scraped all Bundesliga match data (2017–2025)using  the package`worldfootballR`
 - 30 teams, total 4876 matches (only `ForAgainst = For` rows kept)
-- Matched coaches to each team
-- Calculated Elo ratings for each team and opponent
-- Computed key performance indicators (KPIs):
-  - Match result points (3/1/0)
-  - Efficiency: `eff = GF - xG_Expected`
+
 ---
 
-## Coach Change Events
+## Coach Change Events and Hetergeneity
+Hypothesis: When is a coaching change more effective? — When the team is homogeneous.
 
 - Identified coach change points and assigned `event_id`
 - Created windows before/after the change
@@ -40,11 +68,15 @@ output-file: new-coach-effect.pdf
   - `relative_time` (time index relative to change)
   - `post` (binary: pre/post change)
   - `time_post` (time since change)
+$$\text{Heterogeneity}{it} = \frac{1}{3} \sum \text{SD}{i,\,t-4:t}(k), \quad k \in \{\text{Sh}, \text{SoT}, \text{xG}\}$$
+
+where $\text{SD}_{i,\,t-4:t}(k)$ denotes the standard deviation of variable k for team i over the five-match window from t-4 to t. The variables include:
+	•	$\text{Sh}$: number of shots
+	•	$\text{SoT}$: shots on target
+	•	$\text{xG}$: expected goals
+--
 
 ---
-## Hetergeneity
-
-
 
 ## Visualization
 
@@ -54,30 +86,19 @@ output-file: new-coach-effect.pdf
 
 ---
 
-## Interrupted Time Series Model (ITS)
+## Interrupted Time Series Model (ITS) and Poisson Regression Model
 We model team performance using the following regression:
-
 $$
 y_{it} = \alpha_i + \beta_1 t + \beta_2 \cdot \text{post}_{it} + \beta_3 \cdot \text{time\_post}_{it} + \beta_4 \cdot \text{home}_{it} + \beta_5 \cdot \text{elo}_{it} + \varepsilon_{it}
 $$
 
 where $\alpha_i$ corresponds to C(Team) or heter— the fixed effect for each team.
 
-example or graph explaination
----
-
-
-
-## Poisson Regression Model
-
 We model count-type outcomes (e.g., goals or points) as:
 
-$$
-y_{it} \sim \text{Poisson}(\lambda_{it})
-$$
+$y_{it} \sim \text{Poisson}(\lambda_{it})$
 
 with the log link function:
-
 $$
 \log(\lambda_{it}) = \alpha_i + \beta_1 t + \beta_2 \cdot \text{post}_{it} + \beta_3 \cdot \text{time\_post}_{it} + \beta_4 \cdot \text{home}_{it} + \beta_5 \cdot \text{elo}_{it}
 $$
