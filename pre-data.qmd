@@ -1,0 +1,95 @@
+---
+title: "Exploring the New Coach Effect with Data"
+author: "Yiming Zang and Jiahui Fan"
+format:
+  beamer:
+    theme: metropolis
+    slide-level: 2
+    highlight-style: github
+    toc: false
+    keep-tex: true
+    include-in-header: |
+      \usepackage{etoolbox}
+      \makeatletter
+      \patchcmd{\beamer@@frametitle}{\insertframenumber}{\ifnum\value{framenumber}>1 \insertframenumber\fi}{}{}
+      \makeatother
+output-file: new-coach-effect.pdf
+---
+## Research Question
+
+- To evaluate whether the change of coach has a statistically and practically significant effect on team performance, using model-based inference and standardized metrics.
+
+-
+
+## Data Preparation
+
+- Scraped all Bundesliga match data (2017–2025)using  the package`worldfootballR`
+- 30 teams, total 4876 matches (only `ForAgainst = For` rows kept)
+- Matched coaches to each team
+- Calculated Elo ratings for each team and opponent
+- Computed key performance indicators (KPIs):
+  - Match result points (3/1/0)
+  - Efficiency: `eff = GF - xG_Expected`
+---
+
+## Coach Change Events
+
+- Identified coach change points and assigned `event_id`
+- Created windows before/after the change
+- Constructed:
+  - `relative_time` (time index relative to change)
+  - `post` (binary: pre/post change)
+  - `time_post` (time since change)
+
+---
+## Hetergeneity
+
+
+
+## Visualization
+
+- Plotted average points over time by `relative_time`
+- Compared pre- and post-change trends
+- Goal: visually assess changes in team performance after coaching switches
+
+---
+
+## Interrupted Time Series Model (ITS)
+We model team performance using the following regression:
+
+$$
+y_{it} = \alpha_i + \beta_1 t + \beta_2 \cdot \text{post}_{it} + \beta_3 \cdot \text{time\_post}_{it} + \beta_4 \cdot \text{home}_{it} + \beta_5 \cdot \text{elo}_{it} + \varepsilon_{it}
+$$
+
+where $\alpha_i$ corresponds to C(Team) or heter— the fixed effect for each team.
+
+example or graph explaination
+---
+
+
+
+## Poisson Regression Model
+
+We model count-type outcomes (e.g., goals or points) as:
+
+$$
+y_{it} \sim \text{Poisson}(\lambda_{it})
+$$
+
+with the log link function:
+
+$$
+\log(\lambda_{it}) = \alpha_i + \beta_1 t + \beta_2 \cdot \text{post}_{it} + \beta_3 \cdot \text{time\_post}_{it} + \beta_4 \cdot \text{home}_{it} + \beta_5 \cdot \text{elo}_{it}
+$$
+
+
+
+---
+
+## Further Perspective: Tactical Efficiency
+
+- Define `eff = GF - xG_Expected`
+- If post-change `eff > 0` and significant → better tactical efficiency
+- If `xG_Expected ↑` but `eff ≈ 0` → chances created but not converted
+
+
